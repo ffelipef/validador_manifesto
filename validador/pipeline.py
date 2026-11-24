@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from . import all_, ap
+from . import all_
 from .util import Resultado
+from . import ap
 
 SIGMA = ap.SIGMA  # alfabeto de entrada da aplicação
 
