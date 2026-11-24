@@ -18,13 +18,13 @@ from .casos import ALL_CASOS, AP_CASOS, FLUXO_CASOS
 from validador import all_, ap, pipeline
 
 EQUIPE = ["Felipe de Freitas", "Benjamin Suzuki", "Lucas Mesquita"]
-LINK_GITHUB = "[colar o link do repositório GitHub]"
+LINK_GITHUB = "https://github.com/ffelipef/validador_manifesto"
 PREENCHER_CONTRIBUICOES = {
     "Felipe de Freitas": "Revisão do código, testes e relatório",
     "Benjamin Suzuki": "Desenvolvimento do código e testes",
     "Lucas Mesquita": "Elaboração do relatório e testes",
 }
-PREENCHER_REVISAO_EQUIPE = ""
+PREENCHER_REVISAO_EQUIPE = "Executou os testes, refez à mão a derivação e os rastreamentos, revisou as provas e conferiu a consistência do relatório com o código e os testes."
 # --------------------------------------------------------------
 
 F = "/usr/share/fonts/truetype/dejavu/"

@@ -25,5 +25,5 @@ python -m tests.relatorio                   # gera tests/RESULTADOS.md (entrada/
 
 ## Uso de IA (preencher antes de entregar)
 - Ferramenta: Claude (Anthropic)
-- Tarefas apoiadas: _(ex.: rascunho do código, do README e da especificação)_
-- O que a equipe verificou: _(ex.: executou os testes, refez à mão a derivação e os rastreamentos, revisou as provas)_
+- Tarefas apoiadas: Rascunho do código, do README e da especificação
+- O que a equipe verificou: Executou os testes, refez à mão a derivação e os rastreamentos, revisou as provas.
