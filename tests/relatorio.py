@@ -1,20 +1,10 @@
-"""Gera Relatorio_AV2_CC6NA.pdf. Uso (na raiz do projeto): python docs/gerar_relatorio.py"""
 import os
 import sys
 from xml.sax.saxutils import escape as esc
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
-
-from .casos import ALL_CASOS, AP_CASOS, FLUXO_CASOS
+from tests.casos import ALL_CASOS, AP_CASOS, FLUXO_CASOS
 from validador import all_, ap, pipeline
 
 EQUIPE = ["Felipe de Freitas", "Benjamin Suzuki", "Lucas Mesquita"]
@@ -27,54 +17,51 @@ PREENCHER_CONTRIBUICOES = {
 PREENCHER_REVISAO_EQUIPE = "Executou os testes, refez à mão a derivação e os rastreamentos, revisou as provas e conferiu a consistência do relatório com o código e os testes."
 # --------------------------------------------------------------
 
-F = "/usr/share/fonts/truetype/dejavu/"
-pdfmetrics.registerFont(TTFont("DV", F + "DejaVuSans.ttf"))
-pdfmetrics.registerFont(TTFont("DV-B", F + "DejaVuSans-Bold.ttf"))
-pdfmetrics.registerFont(TTFont("DV-I", F + "DejaVuSans-Oblique.ttf"))
-pdfmetrics.registerFont(TTFont("DV-BI", F + "DejaVuSans-BoldOblique.ttf"))
-pdfmetrics.registerFont(TTFont("DVM", F + "DejaVuSansMono.ttf"))
-pdfmetrics.registerFontFamily("DV", normal="DV", bold="DV-B", italic="DV-I", boldItalic="DV-BI")
+cm = 28.35  # pontos por cm
 
-AZUL = colors.HexColor("#1F3A5F")
-CINZA = colors.HexColor("#F2F4F7")
-S = {
-    "p": ParagraphStyle("p", fontName="DV", fontSize=9.5, leading=13.5, alignment=TA_JUSTIFY, spaceAfter=5),
-    "h1": ParagraphStyle("h1", fontName="DV-B", fontSize=14, leading=18, textColor=AZUL, spaceBefore=12, spaceAfter=6),
-    "h2": ParagraphStyle("h2", fontName="DV-B", fontSize=11, leading=15, textColor=AZUL, spaceBefore=8, spaceAfter=4),
-    "b": ParagraphStyle("b", fontName="DV", fontSize=9.5, leading=13.5, leftIndent=14, bulletIndent=3, spaceAfter=2),
-    "code": ParagraphStyle("code", fontName="DVM", fontSize=7.4, leading=9.4, backColor=CINZA, borderPadding=4, spaceAfter=6),
-    "cell": ParagraphStyle("cell", fontName="DV", fontSize=7.8, leading=9.6),
-    "cellm": ParagraphStyle("cellm", fontName="DVM", fontSize=7.2, leading=9),
-    "capa_t": ParagraphStyle("capa_t", fontName="DV-B", fontSize=21, leading=27, alignment=TA_CENTER, textColor=AZUL),
-    "capa_s": ParagraphStyle("capa_s", fontName="DV", fontSize=11.5, leading=17, alignment=TA_CENTER),
-}
+
+def _fix(t):
+    return t.replace("<font name='DVM'>", "<code>").replace("</font>", "</code>")
 
 
 def P(t, st="p"):
-    return Paragraph(t, S[st])
+    if st in ("h1", "h2"):
+        return f"<{st}>{_fix(t)}</{st}>"
+    return f'<p class="{st}">{_fix(t)}</p>'
 
 
 def B(t):
-    return Paragraph(t, S["b"], bulletText="•")
+    return f'<p class="b">• {_fix(t)}</p>'
 
 
 def code(linhas):
-    return Paragraph("<br/>".join(esc(l).replace(" ", "&nbsp;") for l in linhas), S["code"])
+    return "<pre>" + "\n".join(esc(l) for l in linhas) + "</pre>"
+
+
+def Spacer(w, h):
+    return f'<div style="height:{h}pt"></div>'
+
+
+def PageBreak():
+    return '<div class="quebra"></div>'
 
 
 def tabela(dados, larguras, cab=True, mono_cols=()):
-    linhas = []
+    cols = "".join(f'<col style="width:{w}pt">' for w in larguras)
+    rows = []
     for i, row in enumerate(dados):
-        linhas.append([Paragraph(esc(str(c)) if (j in mono_cols and i > 0) else str(c),
-                                 S["cellm"] if (j in mono_cols and i > 0) else S["cell"]) for j, c in enumerate(row)])
-    t = Table(linhas, colWidths=larguras, repeatRows=1 if cab else 0)
-    est = [("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#B8C0CC")), ("VALIGN", (0, 0), (-1, -1), "TOP"),
-           ("LEFTPADDING", (0, 0), (-1, -1), 3), ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-           ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]
-    if cab:
-        est += [("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#DCE4F0"))]
-    t.setStyle(TableStyle(est))
-    return t
+        tag = "th" if (cab and i == 0) else "td"
+        cel = "".join(f"<{tag}>" + (f"<code>{esc(str(c))}</code>" if (j in mono_cols and i > 0) else _fix(str(c))) + f"</{tag}>"
+                      for j, c in enumerate(row))
+        rows.append(f"<tr>{cel}</tr>")
+    return f'<table class="t"><colgroup>{cols}</colgroup>' + "".join(rows) + "</table>"
+
+
+def grade(itens, n=3, larg=0):
+    while len(itens) % n:
+        itens.append("")
+    rows = ["<tr>" + "".join(f"<td><code>{esc(c)}</code></td>" for c in itens[i:i + n]) + "</tr>" for i in range(0, len(itens), n)]
+    return '<table class="g">' + "".join(rows) + "</table>"
 
 
 def dec(b):
@@ -85,31 +72,12 @@ def tab_testes(casos, f):
     d = [["Entrada", "Esperado", "Obtido", "Regra verificada", "OK"]]
     for e, esp, regra in casos:
         obt = f(e)
-        d.append([e or "ε", esp if isinstance(esp, str) else dec(esp), obt, regra, "OK" if (obt == (esp if isinstance(esp, str) else dec(esp))) else "FALHA"])
+        alvo = esp if isinstance(esp, str) else dec(esp)
+        d.append([e or "ε", alvo, obt, regra, "OK" if obt == alvo else "FALHA"])
     return tabela(d, [4.2 * cm, 2.1 * cm, 2.3 * cm, 7.0 * cm, 1.2 * cm], mono_cols=(0,))
 
 
-def grade(itens, n=3, larg=5.6 * cm):
-    while len(itens) % n:
-        itens.append("")
-    rows = [[Paragraph(esc(c), S["cellm"]) for c in itens[i:i + n]] for i in range(0, len(itens), n)]
-    t = Table(rows, colWidths=[larg] * n)
-    t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#C8CED8")), ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                           ("TOPPADDING", (0, 0), (-1, -1), 1.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 1.5)]))
-    return t
-
-
-def rodape(c, doc):
-    c.saveState()
-    c.setFont("DV", 7.5)
-    c.setFillColor(colors.grey)
-    c.drawString(2 * cm, 1.2 * cm, "AV2 – Linguagens Formais e Autômatos – CC6NA")
-    c.drawRightString(A4[0] - 2 * cm, 1.2 * cm, f"Página {doc.page}")
-    c.restoreState()
-
-
-s = []
-# ---------------- capa ----------------
+s = []# ---------------- capa ----------------
 s += [Spacer(1, 4.5 * cm), P("Validador de Manifestos de Carga com Autômato de Pilha e Autômato Linearmente Limitado", "capa_t"),
       Spacer(1, 0.8 * cm), P("Atividade Prática AV2 – Linguagens Livres de Contexto e Sensíveis ao Contexto", "capa_s"),
       P("Linguagens Formais e Autômatos – CESUPA", "capa_s"), P("Turma CC6NA – 25/11/2026", "capa_s"), Spacer(1, 1.2 * cm),
@@ -248,7 +216,29 @@ s += [P("Referências", "h1"),
       P("SIPSER, M. <i>Introdução à Teoria da Computação</i>. Cengage Learning.<br/>HOPCROFT, J. E.; MOTWANI, R.; ULLMAN, J. D. <i>Introdução à Teoria de Autômatos, Linguagens e Computação</i>. Elsevier.<br/>"
         "MENEZES, P. B. <i>Linguagens Formais e Autômatos</i>. Bookman.")]
 
-out = "Relatorio_AV2_CC6NA.pdf"
-SimpleDocTemplate(out, pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm, topMargin=1.8 * cm, bottomMargin=2 * cm,
-                  title="Relatório AV2 – Validador de Manifestos (AP + ALL)", author=", ".join(EQUIPE)).build(s, onFirstPage=lambda c, d: None, onLaterPages=rodape)
-print("gerado:", out)
+CSS = """
+@page { size: A4; margin: 2cm; }
+body { font-family: 'DejaVu Sans', 'Segoe UI', Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #111; }
+h1 { font-size: 14pt; color: #1F3A5F; margin: 16pt 0 6pt; page-break-after: avoid; }
+h2 { font-size: 11pt; color: #1F3A5F; margin: 10pt 0 4pt; page-break-after: avoid; }
+p { margin: 0 0 6pt; text-align: justify; }
+p.b { margin: 0 0 3pt 14pt; text-indent: -10pt; text-align: left; }
+p.capa_t { font-size: 21pt; font-weight: bold; color: #1F3A5F; text-align: center; line-height: 1.3; }
+p.capa_s { font-size: 11.5pt; text-align: center; }
+code { font-family: Consolas, 'DejaVu Sans Mono', monospace; font-size: 9pt; }
+pre { font-family: Consolas, 'DejaVu Sans Mono', monospace; font-size: 7.6pt; line-height: 1.25; background: #F2F4F7; padding: 5pt; margin: 0 0 8pt; white-space: pre; overflow: hidden; }
+table { border-collapse: collapse; margin-bottom: 8pt; }
+table.t { width: 100%; table-layout: fixed; }
+table.g { width: 100%; }
+th, td { border: 0.5pt solid #B8C0CC; padding: 2pt 3pt; font-size: 7.8pt; vertical-align: top; text-align: left; word-wrap: break-word; }
+th { background: #DCE4F0; }
+td code { font-size: 7.4pt; }
+tr { page-break-inside: avoid; }
+.quebra { page-break-after: always; }
+"""
+html = ("<!DOCTYPE html><html lang='pt-BR'><head><meta charset='utf-8'><title>Relatório AV2 – Validador de Manifestos (AP + ALL)</title>"
+        "<style>" + CSS + "</style></head><body>" + "\n".join(s) + "</body></html>")
+out = "Relatorio_AV2_CC6NA.html"
+with open(out, "w", encoding="utf-8") as f:
+    f.write(html)
+print("gerado:", out, "-> abra no navegador e use Ctrl+P > Salvar como PDF")
