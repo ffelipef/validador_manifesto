@@ -1,3 +1,7 @@
+"""Gera Relatorio_AV2_CC6NA.html SEM bibliotecas externas (só Python puro).
+Uso (na raiz do projeto): python docs/gerar_relatorio.py
+Depois abra o .html no navegador e use Ctrl+P > "Salvar como PDF".
+Edite as variáveis abaixo (colchetes) e rode de novo para atualizar."""
 import os
 import sys
 from xml.sax.saxutils import escape as esc
@@ -68,6 +72,10 @@ def dec(b):
     return "ACEITA" if b else "REJEITA"
 
 
+def corte(tr, ini=48, fim=10):
+    return tr if len(tr) <= ini + fim + 2 else tr[:ini] + [f'   … ({len(tr) - ini - fim} passos omitidos neste relatório; use main.py --trace) …'] + tr[-fim:]
+
+
 def tab_testes(casos, f):
     d = [["Entrada", "Esperado", "Obtido", "Regra verificada", "OK"]]
     for e, esp, regra in casos:
@@ -93,8 +101,8 @@ s += [P("1. Problema e visão geral", "h1"),
         "<b>nunca</b> contêm contêiner), seguidos do separador <font name='DVM'>#</font> e de uma cauda <font name='DVM'>P+ C+ U+</font>. "
         "Se a estrutura é válida, na <b>etapa 2</b> um autômato linearmente limitado (ALL) recebe a cauda e confere a regra sensível ao contexto: "
         "<i>n</i> paletes (P) × <i>m</i> caixas por palete (C) = <i>n</i>·<i>m</i> unidades (U)."),
-      P("Exemplos: <font name='DVM'>{[][]}#PPCCUUUU</font> é aceita pelos dois módulos (2×2=4); <font name='DVM'>{[}]#PPCCUUUU</font> é rejeitada pelo AP "
-        "(o ALL não executa); <font name='DVM'>{[][]}#PPCCUUUUU</font> é aceita pelo AP e rejeitada pelo ALL (2×2≠5)."),
+      P("Exemplos: <font name='DVM'>{[][]}#PPPCCUUUUUU</font> é aceita pelos dois módulos (3×2=6); <font name='DVM'>{[][}]}#PPPCCUUUUUU</font> é rejeitada pelo AP "
+        "(o ALL não executa); <font name='DVM'>{[][]}#PPPCCUUUUUUU</font> é aceita pelo AP e rejeitada pelo ALL (3×2≠7)."),
       P("2. Fontes consultadas", "h1"),
       B("SIPSER, M. <i>Introdução à Teoria da Computação</i>. Cengage Learning – autômatos de pilha, lema do bombeamento para linguagens livres de contexto e autômatos linearmente limitados."),
       B("HOPCROFT, J. E.; MOTWANI, R.; ULLMAN, J. D. <i>Introdução à Teoria de Autômatos, Linguagens e Computação</i>. Elsevier."),
@@ -110,10 +118,11 @@ s += [P("3. Etapa 1 – Gramática livre de contexto", "h1"),
             "I → L I | G I | L | G                     G → [ ] | [ H ]       H → G H | G",
             "T → P T | P R      R → C R | C V          V → U V | U"]),
       P("L = contêiner, G = volume, I = conteúdo de um contêiner, H = conteúdo de um volume, T/R/V = blocos de P, C e U."),
-      P("<b>Derivação mais à esquerda</b> da cadeia aceita <font name='DVM'>{[][]}#PPCCUUUU</font>:"),
+      P("<b>Derivação mais à esquerda</b> da cadeia aceita <font name='DVM'>{[][]}#PPPCCUUUUUU</font>:"),
       code(["S ⇒ B#T ⇒ L#T ⇒ {I}#T ⇒ {GI}#T ⇒ {[ ]I}#T ⇒ {[ ]G}#T ⇒ {[ ][ ]}#T",
-            "  ⇒ {[][]}#PT ⇒ {[][]}#PPR ⇒ {[][]}#PPCR ⇒ {[][]}#PPCCV ⇒ {[][]}#PPCCUV",
-            "  ⇒ {[][]}#PPCCUUV ⇒ {[][]}#PPCCUUUV ⇒ {[][]}#PPCCUUUU"]),
+            "  ⇒ {[][]}#PT ⇒ {[][]}#PPT ⇒ {[][]}#PPPR ⇒ {[][]}#PPPCR ⇒ {[][]}#PPPCCV",
+            "  ⇒ {[][]}#PPPCCUV ⇒ {[][]}#PPPCCUUV ⇒ {[][]}#PPPCCUUUV",
+            "  ⇒ {[][]}#PPPCCUUUUV ⇒ {[][]}#PPPCCUUUUUV ⇒ {[][]}#PPPCCUUUUUU"]),
       P("<b>L<sub>1</sub> não é regular.</b> Considere a linguagem regular R = <font name='DVM'>{+ [ ] }+ # P C U</font>. A interseção L<sub>1</sub> ∩ R = "
         "{ {<super>n</super> [ ] }<super>n</super> # PCU : n ≥ 1 }, pois só há equilíbrio quando o número de <font name='DVM'>{</font> é igual ao de <font name='DVM'>}</font>. "
         "Essa linguagem não é regular (lema do bombeamento: bombear apenas o bloco de <font name='DVM'>{</font> desequilibra a cadeia). "
@@ -121,7 +130,7 @@ s += [P("3. Etapa 1 – Gramática livre de contexto", "h1"),
 
 # ---------------- 4 ----------------
 tr_ap = [f"({q}, {a}, {t}) → ({q2}, {rep or 'ε'})" for (q, a, t), (q2, rep) in ap.DELTA.items()]
-r_ap = ap.executar("{[][]}#PPCCUUUU")
+r_ap = ap.executar("{[][]}#PPPCCUUUUUU")
 s += [P("4. Autômato de pilha (AP)", "h1"),
       P("<b>Definição.</b> M = (Q, Σ, Γ, δ, q<sub>0</sub>, Z, F), com Q = {q0, …, q8} (9 estados), Σ como acima, alfabeto da pilha Γ = {Z, N, V} "
         "(Z = fundo, N = contêiner aberto, V = volume aberto), estado inicial q0, F = {q8}. <b>Configuração inicial:</b> (q0, w, Z), com a pilha contendo só Z. "
@@ -138,12 +147,12 @@ s += [P("4. Autômato de pilha (AP)", "h1"),
         "<font name='DVM'>{</font> com topo V”; a regra “contêiner não vazio” vira “não há transição de q1 para <font name='DVM'>}</font>”; "
         "“volume ou contêiner no topo” é tratado pelo topo Z em q4. T, R e V são a parte regular e usam apenas estados. (⇐) Todo caminho de aceitação lê a pilha como a pilha de "
         "não terminais pendentes e monta uma árvore de derivação de G. Além do argumento, o AP foi comparado com um parser recursivo independente da GLC em milhares de cadeias mutadas."),
-      P("<b>Rastreamento</b> do AP para <font name='DVM'>{[][]}#PPCCUUUU</font> (topo da pilha à esquerda):"),
+      P("<b>Rastreamento</b> do AP para <font name='DVM'>{[][]}#PPPCCUUUUUU</font> (topo da pilha à esquerda):"),
       code(r_ap.traco)]
 
 # ---------------- 5 ----------------
 tr_all = [f"({q}, {a}) → ({q2}, {e}, {m})" for (q, a), (q2, e, m) in all_.D.items()]
-r_all = all_.executar("PCCUU")
+r_all = all_.executar("PPPCCUUUUUU")
 s += [P("5. Etapa 2 – Linguagem sensível ao contexto e ALL", "h1"),
       P("<b>Linguagem:</b> L<sub>2</sub> = { P<super>n</super> C<super>m</super> U<super>n·m</super> : n, m ≥ 1 }, alfabeto { P, C, U }. "
         "<b>Regra de aceitação:</b> a cauda tem blocos P+, C+, U+ nessa ordem e o número de U é o produto do número de P pelo de C."),
@@ -165,8 +174,8 @@ s += [P("5. Etapa 2 – Linguagem sensível ao contexto e ALL", "h1"),
       P("<b>Limite da fita.</b> Para uma entrada de n símbolos, a fita tem n células graváveis mais os dois marcadores. Só são escritas marcas (p, k, u) sobre as próprias células da entrada; "
         "nenhuma transição move o cabeçote para fora de [&lt;, &gt;] nem sobrescreve os marcadores – a implementação verifica as duas condições com asserções a cada passo. "
         "Logo, toda a memória de trabalho cabe na fita da entrada, como exige um ALL."),
-      P("<b>Rastreamento</b> do ALL para a cauda <font name='DVM'>PCCUU</font> (1×2=2; cabeçote entre colchetes):"),
-      code(r_all.traco)]
+      P("<b>Rastreamento</b> do ALL para a cauda <font name='DVM'>PPPCCUUUUUU</font> (3×2=6; início e fim do rastreamento completo, cabeçote entre colchetes):"),
+      code(corte(r_all.traco))]
 
 # ---------------- 6 ----------------
 s += [P("6. Implementação", "h1"),
@@ -186,13 +195,13 @@ def st_fl(e): return pipeline.validar(e).status
 
 s += [P("7. Testes", "h1"),
       P("Cada reconhecedor foi testado separadamente (pelo menos 8 cadeias aceitas e 8 rejeitadas, todas distintas e com o alfabeto do módulo, incluindo casos-limite) "
-        "e o fluxo completo foi testado com as três entradas exigidas, mais um símbolo fora do alfabeto. A tabela é reproduzível com <font name='DVM'>python -m tests.relatorio</font>."),
+        "e o fluxo completo foi testado com as três entradas exigidas, mais um símbolo fora do alfabeto. Conforme a nota da lauda, todas as cadeias selecionadas têm pelo menos 18 caracteres (exceção: a entrada vazia, usada como caso-limite). A tabela é reproduzível com <font name='DVM'>python -m tests.relatorio</font>."),
       P("7.1 Módulo AP", "h2"), tab_testes(AP_CASOS, st_ap),
       P("7.2 Módulo ALL", "h2"), tab_testes(ALL_CASOS, st_all),
       P("7.3 Fluxo completo", "h2"), tab_testes(FLUXO_CASOS, st_fl),
       Spacer(1, 4),
-      P("<b>Símbolo fora do alfabeto.</b> Entrada <font name='DVM'>{[]}#PCX</font>; mensagem exibida:"),
-      code([pipeline.validar("{[]}#PCX").mensagem]),
+      P("<b>Símbolo fora do alfabeto.</b> Entrada <font name='DVM'>{[][]}#PPPCCUUUUUX</font>; mensagem exibida:"),
+      code([pipeline.validar("{[][]}#PPPCCUUUUUX").mensagem]),
       P("Além dos casos acima, a suíte automatizada (<font name='DVM'>python -m unittest -v</font>) compara o ALL com um oráculo em todas as cadeias de {P, C, U} até comprimento 9 "
         "e o AP com um parser recursivo independente em 4.000 cadeias mutadas.")]
 
@@ -201,7 +210,7 @@ s += [P("8. Análise dos resultados e limitação", "h1"),
       P(f"Todos os {len(AP_CASOS)} casos do AP, os {len(ALL_CASOS)} do ALL e os {len(FLUXO_CASOS)} do fluxo produziram a decisão esperada. "
         "Os três cenários de integração mostram a divisão de trabalho: a estrutura aninhada exige a pilha (o AP rejeita fechamentos cruzados e contêiner dentro de volume), "
         "enquanto a igualdade entre o número de U e o produto n·m exige reescrever a fita (o ALL), algo que nenhuma pilha faz."),
-      P("<b>Limitação observada.</b> O AP aceita <font name='DVM'>{[]}#PCUU</font>: a estrutura é válida, e só o ALL percebe que as unidades não conferem. Isso é uma consequência do projeto "
+      P("<b>Limitação observada.</b> O AP aceita <font name='DVM'>{[][]}#PPPCCUUUUUUU</font>: a estrutura é válida, e só o ALL percebe que as unidades não conferem. Isso é uma consequência do projeto "
         "(cada etapa verifica um único tipo de dependência), mas significa que a etapa 1 sozinha não garante um manifesto coerente. Outra limitação é o custo O(n²) do ALL e o rastreamento muito longo para caudas grandes.")]
 
 # ---------------- 9, 10 ----------------
@@ -210,6 +219,7 @@ s += [P("9. Uso de inteligência artificial", "h1"),
       B("<b>Tarefas apoiadas:</b> proposta do problema e das linguagens L<sub>1</sub> e L<sub>2</sub>; escrita do código-fonte (AP, ALL, fluxo e interface), dos testes automatizados, do README e do rascunho deste relatório."),
       B("<b>Verificações automatizadas:</b> execução da suíte de testes (todos os testes passaram), comparação do ALL com oráculo em todas as cadeias até comprimento 9 e do AP com parser independente em cadeias mutadas."),
       B("<b>Verificação pela equipe:</b> " + esc(PREENCHER_REVISAO_EQUIPE)),
+      B("<b>Origem do código, das gramáticas e dos exemplos:</b> elaborados para este trabalho; não reaproveitam exercícios de sala nem o exemplo da lauda, e não há diagramas de terceiros. A prova pelo lema do bombeamento segue a técnica padrão descrita em Sipser."),
       P("10. Contribuição de cada integrante", "h1")]
 s.append(tabela([["Integrante", "Contribuição"]] + [[n, PREENCHER_CONTRIBUICOES.get(n, "")] for n in EQUIPE], [5 * cm, 11.8 * cm]))
 s += [P("Referências", "h1"),

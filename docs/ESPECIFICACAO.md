@@ -11,8 +11,8 @@ S → B # T          B → L B | L          L → { I }
 I → L I | G I | L | G                   G → [ ] | [ H ]       H → G H | G
 T → P T | P R      R → C R | C V        V → U V | U
 ```
-**Derivação** de `{[][]}#PPCCUUUU`:
-S ⇒ B#T ⇒ L#T ⇒ {I}#T ⇒ {GI}#T ⇒ {[ ]I}#T ⇒ {[ ]G}#T ⇒ {[ ][ ]}#T ⇒ {[][]}#PT ⇒ {[][]}#PPR ⇒ …#PPCR ⇒ …#PPCCV ⇒ …#PPCCUV ⇒ …#PPCCUUV ⇒ …#PPCCUUUV ⇒ {[][]}#PPCCUUUU.
+**Derivação** de `{[][]}#PPPCCUUUUUU`:
+S ⇒ B#T ⇒ L#T ⇒ {I}#T ⇒ {GI}#T ⇒ {[ ]I}#T ⇒ {[ ]G}#T ⇒ {[ ][ ]}#T ⇒ {[][]}#PT ⇒ {[][]}#PPT ⇒ {[][]}#PPPR ⇒ …#PPPCR ⇒ …#PPPCCV ⇒ …#PPPCCUV ⇒ …#PPPCCUUV ⇒ …#PPPCCUUUV ⇒ …#PPPCCUUUUV ⇒ …#PPPCCUUUUUV ⇒ {[][]}#PPPCCUUUUUU.
 
 **L1 não é regular:** L1 ∩ `{+ [ ] }+ # P C U` = { {ⁿ [ ] }ⁿ # PCU : n ≥ 1 }, que não é regular (lema do bombeamento: bombear só `{` desequilibra). Regulares são fechadas sob interseção, logo L1 não é regular. É livre de contexto (gerada pela GLC) — Chomsky tipo 2.
 
@@ -42,7 +42,10 @@ Algoritmo: q0–q5 conferem o formato P⁺C⁺U⁺ e voltam a `<`; q6 marca o pr
 - **Ambos são determinísticos** (no máximo uma transição por configuração): não há exploração de alternativas; a ausência de transição é a rejeição.
 
 ## 6. Limitação observada nos testes (para comentar)
-O AP aceita `{[]}#PCUU` (a estrutura é válida) mesmo que as unidades não batam: a dependência só é vista pelo ALL, por design. Outra: o ALL faz O(n²) passos, e o rastreamento fica enorme para cauda longa.
+O AP aceita `{[][]}#PPPCCUUUUUUU` (a estrutura é válida) mesmo que as unidades não batam: a dependência só é vista pelo ALL, por design. Outra: o ALL faz O(n²) passos, e o rastreamento fica enorme para cauda longa.
 
 ## 7. Fontes e contribuições (preencher)
 Fontes: _(livro-texto da disciplina, Sipser, Hopcroft/Ullman…)_ · Contribuição de cada integrante: _(…)_
+
+## 8. Nota da lauda
+Todas as cadeias selecionadas (módulos e fluxo) têm ≥ 18 caracteres; a exceção é a entrada vazia, caso-limite de cada módulo (verificado em `tests/test_automatos.py`).

@@ -66,6 +66,12 @@ class TestRequisitos(unittest.TestCase):
             self.assertGreaterEqual(sum(not c[1] for c in casos), 8)
             self.assertEqual(len({c[0] for c in casos}), len(casos))
 
+    def test_comprimento_minimo_18(self):
+        for casos in (AP_CASOS, ALL_CASOS, FLUXO_CASOS):
+            for e, *_ in casos:
+                if e:  # a entrada vazia é o caso-limite
+                    self.assertGreaterEqual(len(e), 18, e)
+
     def test_minimo_8_estados(self):
         est_ap = {k[0] for k in ap.DELTA} | {v[0] for v in ap.DELTA.values()}
         est_all = {k[0] for k in all_.D} | {v[0] for v in all_.D.values()}
