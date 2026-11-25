@@ -24,7 +24,12 @@ python -m tests.relatorio                   # gera tests/RESULTADOS.md (entrada/
 ## Estrutura
 `validador/ap.py` (AP) · `validador/all_.py` (ALL) · `validador/pipeline.py` (fluxo) · `tests/casos.py` (casos) · `exemplos/entradas.txt` (dados de exemplo) · `docs/ESPECIFICACAO.md` (GLC, AP, ALL, provas)
 
-## Uso de IA (preencher antes de entregar)
+## Uso de IA
 - Ferramenta: Claude (Anthropic)
 - Tarefas apoiadas: Rascunho do código, do README e da especificação
 - O que a equipe verificou: Executou os testes, refez à mão a derivação e os rastreamentos, revisou as provas
+
+# Equipe
+- Felipe de Freitas
+- Benjamin Suzuki
+- Lucas Mesquita
